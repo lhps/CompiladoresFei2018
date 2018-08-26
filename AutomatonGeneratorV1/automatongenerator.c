@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "Archives.h"
+
+
+#define TAM_MAX 200
 
 /*
 Fácil
@@ -42,12 +44,8 @@ Nome
 
 
 
-#pragma once
-#include <stdio.h>
 
-#include <stdlib.h>
-#include <string.h>
-#define TAM_MAX 200
+
 
 //Types
 typedef struct {
@@ -62,6 +60,8 @@ typedef struct {
 		programName[TAM_MAX];
 } Automaton;
 
+
+void insertGoTo(FILE *, Automaton *);
 
 //Functions
 
@@ -93,7 +93,7 @@ void insertLibraries(FILE *arq) {
 
 void insertPrototypes(FILE *arq, Automaton *aut) {
 	int i;
-	fprintf(arq, "//Protótipos das funções\nvoidaceita();\nvoid rejeita();\n");
+	fprintf(arq, "//Protótipos das funções\nvoid aceita();\nvoid rejeita();\n");
 	for (i = 0; i < aut->states; i++)
 	{
 		fprintf(arq, "void e%d();\n", i);
@@ -103,7 +103,13 @@ void insertPrototypes(FILE *arq, Automaton *aut) {
 }
 
 void insertMain(FILE* arq, Automaton *aut) {
-	fprintf(arq, "//Main\nint main(){\n%sgets(palavra);\n%spos = 0;\n%se%d();\n", tabFunction(1), tabFunction(1), tabFunction(1), aut->inicialState);
+	if(aut->type == 1){
+		fprintf(arq, "//Main\nint main(){\n%sgets(palavra);\n%spos = 0;\n%sgoto E%d;\n\n", tabFunction(1), tabFunction(1), tabFunction(1), aut->inicialState);
+		insertGoTo(arq, aut);
+	}
+		
+	else
+		fprintf(arq, "//Main\nint main(){\n%sgets(palavra);\n%spos = 0;\n%se%d();\n", tabFunction(1), tabFunction(1), tabFunction(1), aut->inicialState);
 }
 
 void closeMain(FILE* arq) {
@@ -115,34 +121,63 @@ void insertGlobalsVariables(FILE *arq) {
 }
 
 void insertFunctions(FILE *arq, Automaton *aut) {
-	int i, j, auxIni = 0, auxEnd = 0;
-
+	int i, j, control;
+	
 	fprintf(arq, "void aceita(){\n%sprintf(\"Aceita!\");\n}\n\nvoid rejeita(){\n%sprintf(\"Rejeita!\");\n}\n\n", tabFunction(1), tabFunction(1));
 
 	for ( i = 0; i < aut->states; i++)
 	{
 		fprintf(arq,"void e%d(){\n", i);
-		auxEnd = 0;
-		auxIni = 0;
-
+		control = 1;
 		for ( j = 0; j < aut->qtAlfabect; j++)
 		{
 			if (aut->transitionMatrix[i][j] != -1)
 			{
-				fprintf(arq, "%s%s(palavra[pos] == '%c'){\n%spos++;\n%se%d();\n%s}",
-					auxIni == 0 ? tabFunction(1) : "", auxIni == 0 ? "if" : "else if",
-					aut->alfabect[j], tabFunction(2), tabFunction(2), aut->transitionMatrix[i][j], tabFunction(1));
-				auxEnd++;
-				auxIni;
-
+				fprintf(arq, "%sif(palavra[pos] == '%c'){\n%spos++;\n%se%d();\n%s}\n%selse\n",
+					tabFunction(control), aut->alfabect[j], tabFunction(control+1), tabFunction(control+1), aut->transitionMatrix[i][j], tabFunction(control),tabFunction(control));
+				
+				control++;
 			}
 		}
 		if (linearSearch(aut->finalStatesvector, aut->finalStates, i))
 		{
-			fprintf(arq, "%s%sif(palavra[pos] == '\\0'){\n%saceita();\n%s}",
-				auxIni == 0 ? tabFunction(1) : "", auxEnd == 0 ? "" : "else ", tabFunction(2), tabFunction(1));
+			fprintf(arq, "%sif(palavra[pos] == '\\0'){\n%saceita();\n%s}\n%selse\n",
+				tabFunction(control), tabFunction(control+1), tabFunction(control),tabFunction(control));
+			
+			control++;
 		}
-		fprintf(arq, "else\n%srejeita();\n}\n\n", tabFunction(2));
+		fprintf(arq, "%srejeita();\n}\n\n", tabFunction(control));
+
+	}
+}
+
+void insertGoTo(FILE *arq, Automaton *aut){
+	int i, j, control;
+	
+	fprintf(arq, "ACEITA:\n%sprintf(\"Aceita!\");\n%sexit(0);\n\nREJEITA:\n%sprintf(\"Rejeita!\");\n%sexit(1);\n\n", tabFunction(1), tabFunction(1), tabFunction(1), tabFunction(1));
+
+	for ( i = 0; i < aut->states; i++)
+	{
+		fprintf(arq,"E%d:\n", i);
+		control = 1;
+		for ( j = 0; j < aut->qtAlfabect; j++)
+		{
+			if (aut->transitionMatrix[i][j] != -1)
+			{
+				fprintf(arq, "%sif(palavra[pos] == '%c'){\n%spos++;\n%sgoto E%d;\n%s}\n%selse\n",
+					tabFunction(control), aut->alfabect[j], tabFunction(control+1), tabFunction(control+1), aut->transitionMatrix[i][j], tabFunction(control),tabFunction(control));
+				
+				control++;
+			}
+		}
+		if (linearSearch(aut->finalStatesvector, aut->finalStates, i))
+		{
+			fprintf(arq, "%sif(palavra[pos] == '\\0'){\n%sgoto ACEITA;\n%s}\n%selse\n",
+				tabFunction(control), tabFunction(control+1), tabFunction(control),tabFunction(control));
+			
+			control++;
+		}
+		fprintf(arq, "%sgoto REJEITA;\n\n", tabFunction(control));
 
 	}
 }
@@ -152,19 +187,20 @@ void generateCodeAutomatons(Automaton *aut){
 	arq = fopen(strcat(aut->programName, ".c"), "w+");
 	insertLibraries(arq);
 	insertGlobalsVariables(arq);
-	insertPrototypes(arq,aut);
 	
-	if (aut->type == 2)
-		insertFunctions(arq, aut);
-	else
-		//insereGoTo(arq, aut);	
-
+	if(aut->type == 2){
+		insertPrototypes(arq,aut);
+			
+	}
 	
-	fclose(arq);
-
 	insertMain(arq, aut);
 	closeMain(arq);
+	if (aut->type == 2){
+		insertFunctions(arq, aut);	
+	}
+		
 	
+	fclose(arq);
 }
 
 
@@ -195,7 +231,7 @@ void initialize(Automaton *aut) {
 
 	for (i = 0; i < aut->qtAlfabect; i++) {
 		printf("Qual o simbolo %d?", i);
-		scanf("%c", &aut->alfabect + i);
+		scanf("%c", aut->alfabect + i);
 		fflush(stdin);
 	}
 
@@ -211,11 +247,11 @@ void initialize(Automaton *aut) {
 	scanf("%d", &aut->finalStates);
 	fflush(stdin);
 
-	aut->finalStates = malloc(aut->finalStates * sizeof(int));
+	aut->finalStatesvector = malloc(aut->finalStates * sizeof(int));
 	for (i = 0; i < aut->finalStates; i++)
 	{
 		printf("Qual o estado final %d? ", i);
-		scanf("%d", &aut->finalStates + i);
+		scanf("%d", aut->finalStatesvector + i);
 		fflush(stdin);
 	}
 
@@ -228,7 +264,8 @@ void initialize(Automaton *aut) {
 	for (i = 0; i < aut->states; i++) {
 		for (j = 0; j < aut->qtAlfabect; j++)
 		{
-			printf("Para o estado e%d e o simbolo %c, qual o proximo estado? ", i, aut->alfabect[j]);
+			
+			printf("Para o estado e%d e o simbolo %c, qual o proximo estado? ", i, *aut->alfabect+j);
 			scanf("%d", *(aut->transitionMatrix + i) + j);
 			//scanf("%d", aut->transitionMatrix[i][j]);
 			fflush(stdin);
@@ -251,7 +288,7 @@ void destructObject(Automaton *aut) {
 
 	free(aut->transitionMatrix);
 	free(aut->alfabect);
-	free((int*)aut->finalStates);
+	free(aut->finalStatesvector);
 	free(aut);
 
 }
@@ -268,7 +305,15 @@ int main(int argc, char *argv[])
     initialize(New);
 	generateCodeAutomatons(New);
     printf("*********** PROGRAMA GERADO COM SUCESSO ***********\n\n");
+    char gcc [100]={"gcc "};
+    char o[5] = {" -o "};
+    strcat(gcc,New->programName);
+    strcat(gcc,o);
+    strcat(gcc,"arquivo.exe");
 	system("pause");
+	system(gcc);
+	system("cls");
+	system("arquivo.exe");
 
 
 	//printf("Deseja testar o automato em questao? [S/N]");
