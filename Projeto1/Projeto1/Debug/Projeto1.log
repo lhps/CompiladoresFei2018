@@ -1,7 +1,0 @@
-﻿  Projeto1.cpp
-h:\fei\6 ciclo\compiladores\compiladoresfei2018\projeto1\projeto1\projeto1.cpp(50): warning C4101: 'i': variável local não referenciada
-h:\fei\6 ciclo\compiladores\compiladoresfei2018\projeto1\projeto1\projeto1.cpp(67): warning C4477: 'scanf': a cadeia de formato '%c' requer um argumento do tipo 'char *', mas um argumento variadic 1 tem o tipo 'int'
-h:\fei\6 ciclo\compiladores\compiladoresfei2018\projeto1\projeto1\projeto1.cpp(87): warning C4477: 'scanf': a cadeia de formato '%d' requer um argumento do tipo 'int *', mas um argumento variadic 1 tem o tipo 'int'
-h:\fei\6 ciclo\compiladores\compiladoresfei2018\projeto1\projeto1\projeto1.cpp(132): warning C4101: 'opcao': variável local não referenciada
-h:\fei\6 ciclo\compiladores\compiladoresfei2018\projeto1\projeto1\archives.h(33): warning C4715: 'linearSearch': nem todos os caminhos de controle retornam um valor
-  Projeto1.vcxproj -> H:\FEI\6 Ciclo\Compiladores\CompiladoresFei2018\Projeto1\Projeto1\Debug\Projeto1.exe
