@@ -1,5 +1,5 @@
-// ConsoleApplication1.cpp : define o ponto de entrada para o aplicativo do console.
-//
+// Gabriel Linhares R.A:221160682
+// Lucas Henrique Pinho R.A:221160948
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -56,7 +56,9 @@ void e0() {
         e2();
     }
     if (entrada[pos] == '\0') {
+        printf("\n===================");
         printf("\nTabela de variaveis\n");
+        printf("===================\n");
         printatabela();
         exit(0);
     }
